@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenStreetMap with Pins</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+        .popup-content {
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+    var map = L.map('map').setView([46.951081, 7.438637], 8);
+
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Sample JSON data (you can load this from an external file)
+    const jsonData = [
+        {
+            "poiID": 145501,
+            "kind": "town_section",
+            "lat": 46.95481660041643,
+            "long": 7.429521114423827,
+            "canton": "BE",
+            "label_de": "Länggasse",
+            "parent_label_de": "Bern",
+            "external_url_de": null,
+            "label_fr": "Länggasse",
+            "parent_label_fr": "Berne",
+            "external_url_fr": null,
+            "label_it": "Länggasse",
+            "parent_label_it": "Berna",
+            "external_url_it": null,
+            "label_en": "Länggasse",
+            "parent_label_en": "Berne",
+            "external_url_en": null
+        },
+        {
+            "poiID": 140152,
+            "kind": "town",
+            "lat": 46.77348109161282,
+            "long": 9.201831522624822,
+            "canton": "GR",
+            "label_de": "Ilanz",
+            "parent_label_de": null,
+            "external_url_de": "https://wetteralarm.ch/schweiz/wetterprognose-fuer-ilanz.html",
+            "label_fr": "Ilanz",
+            "parent_label_fr": null,
+            "external_url_fr": "https://alarmemeteo.ch/previsions-meteo/previsions-meteo-pour-ilanz.html",
+            "label_it": "Ilanz",
+            "parent_label_it": null,
+            "external_url_it": "https://allarmemeteo.ch/previsioni-meteo-svizzera/previsioni-meteo-par-ilanz.html",
+            "label_en": "Ilanz",
+            "parent_label_en": null,
+            "external_url_en": "https://wetteralarm.ch/schweiz/wetterprognose-fuer-ilanz.html"
+        }
+    ];
+
+    // Function to add markers to the map
+    function addMarkers(data) {
+        data.forEach(function(item) {
+            var marker = L.marker([item.lat, item.long]).addTo(map)
+            // Generate popup content
+            var popupContent = `<div class="popup-content"><h3>POI ID: ${item.poiID}</h3>`
+
+            // Add labels
+            const langs = ['de', 'fr', 'it', 'en']
+            langs.forEach(function(lang) {
+                if (item[`label_${lang}`]) {
+                    popupContent += `<p><strong>${lang.toUpperCase()}: </strong>`
+                    if (item[`external_url_${lang}`]) {
+                        popupContent += '<a href="${item[`external_url_${lang}`]}" target="_blank">'
+                    }
+                    popupContent += `${item[`label_${lang}`]}`
+                    if (item[`parent_label_${lang}`]) {
+                        popupContent += ` (${item[`parent_label_${lang}`]})`
+                    }
+                    if (item[`external_url_${lang}`]) {
+                        popupContent += '</a>'
+                    }
+                    popupContent += '</p>'
+                }
+            })
+
+
+            popupContent += '</div>';
+
+            marker.bindPopup(popupContent);
+        });
+    }
+
+    // Load JSON data from an external file (optional)
+    fetch('POIs.json')
+        .then(response => response.json())
+        .then(data => addMarkers(data))
+        .catch(error => console.error('Error loading JSON:', error));
+
+    // If you want to use the sample JSON data directly
+    addMarkers(jsonData);
+</script>
+</body>
+</html>
