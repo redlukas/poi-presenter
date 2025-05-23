@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OpenStreetMap with Pins</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
         #map {
             height: 100vh;
@@ -13,13 +14,58 @@
         .popup-content {
             font-size: 14px;
         }
+        .popup-content h3 {
+            margin-top: 0;
+        }
+        .popup-content p {
+            margin: 5px 0;
+        }
+        .popup-content a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .popup-content a:hover {
+            text-decoration: underline;
+        }
+        .check-mark {
+            font-size: 24px;
+            color: green;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
+<!-- Modal -->
+<div class="modal fade" id="cantonModal" tabindex="-1" role="dialog" aria-labelledby="cantonModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cantonModalLabel">Select Canton</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <select class="form-control" id="cantonSelect">
+                    <!-- Options will be populated here -->
+                </select>
+                <div id="loadingFeedback" class="d-none check-mark">
+                    ✔️
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="map"></div>
+
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script>
-    var map = L.map('map').setView([46.951081, 7.438637], 8);
+    // Initialize the map
+    var map = L.map('map').setView([46.818188, 8.227512], 8);
 
     // Add OpenStreetMap tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -27,74 +73,31 @@
         attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    // Sample JSON data (you can load this from an external file)
-    const jsonData = [
-        {
-            "poiID": 145501,
-            "kind": "town_section",
-            "lat": 46.95481660041643,
-            "long": 7.429521114423827,
-            "canton": "BE",
-            "label_de": "Länggasse",
-            "parent_label_de": "Bern",
-            "external_url_de": null,
-            "label_fr": "Länggasse",
-            "parent_label_fr": "Berne",
-            "external_url_fr": null,
-            "label_it": "Länggasse",
-            "parent_label_it": "Berna",
-            "external_url_it": null,
-            "label_en": "Länggasse",
-            "parent_label_en": "Berne",
-            "external_url_en": null
-        },
-        {
-            "poiID": 140152,
-            "kind": "town",
-            "lat": 46.77348109161282,
-            "long": 9.201831522624822,
-            "canton": "GR",
-            "label_de": "Ilanz",
-            "parent_label_de": null,
-            "external_url_de": "https://wetteralarm.ch/schweiz/wetterprognose-fuer-ilanz.html",
-            "label_fr": "Ilanz",
-            "parent_label_fr": null,
-            "external_url_fr": "https://alarmemeteo.ch/previsions-meteo/previsions-meteo-pour-ilanz.html",
-            "label_it": "Ilanz",
-            "parent_label_it": null,
-            "external_url_it": "https://allarmemeteo.ch/previsioni-meteo-svizzera/previsioni-meteo-par-ilanz.html",
-            "label_en": "Ilanz",
-            "parent_label_en": null,
-            "external_url_en": "https://wetteralarm.ch/schweiz/wetterprognose-fuer-ilanz.html"
-        }
-    ];
-
     // Function to add markers to the map
     function addMarkers(data) {
         data.forEach(function(item) {
-            var marker = L.marker([item.lat, item.long]).addTo(map)
+            var marker = L.marker([item.lat, item.long]).addTo(map);
+
             // Generate popup content
-            var popupContent = `<div class="popup-content"><h3>POI ID: ${item.poiID}</h3>`
+            var popupContent = `<div class="popup-content"><h3>POI ID: ${item.poiID}</h3>`;
 
-            // Add labels
-            const langs = ['de', 'fr', 'it', 'en']
-            langs.forEach(function(lang) {
+            // Add labels and URLs inline
+            ['de', 'fr', 'it', 'en'].forEach(function(lang) {
                 if (item[`label_${lang}`]) {
-                    popupContent += `<p><strong>${lang.toUpperCase()}: </strong>`
+                    popupContent += `<p><strong>${lang.toUpperCase()}:</strong> `;
                     if (item[`external_url_${lang}`]) {
-                        popupContent += '<a href="${item[`external_url_${lang}`]}" target="_blank">'
+                        popupContent += `<a href="${item[`external_url_${lang}`]}" target="_blank">`;
                     }
-                    popupContent += `${item[`label_${lang}`]}`
+                    popupContent += `${item[`label_${lang}`]}`;
                     if (item[`parent_label_${lang}`]) {
-                        popupContent += ` (${item[`parent_label_${lang}`]})`
+                        popupContent += ` (${item[`parent_label_${lang}`]})`;
                     }
                     if (item[`external_url_${lang}`]) {
-                        popupContent += '</a>'
+                        popupContent += '</a>';
                     }
-                    popupContent += '</p>'
+                    popupContent += '</p>';
                 }
-            })
-
+            });
 
             popupContent += '</div>';
 
@@ -102,14 +105,56 @@
         });
     }
 
-    // Load JSON data from an external file (optional)
+    // Function to populate the canton select dropdown
+    function populateCantonSelect(cantons) {
+        const selectElement = document.getElementById('cantonSelect');
+        cantons.forEach(function(canton) {
+            const option = document.createElement('option');
+            option.value = canton;
+            option.textContent = canton;
+            selectElement.appendChild(option);
+        });
+    }
+
+    // Function to filter data by selected canton
+    function filterDataByCanton(data, canton) {
+        return data.filter(function(item) {
+            return item.canton === canton;
+        });
+    }
+
+    // Load JSON data from an external file
     fetch('POIs.json')
         .then(response => response.json())
-        .then(data => addMarkers(data))
-        .catch(error => console.error('Error loading JSON:', error));
+        .then(data => {
+            // Extract distinct cantons and sort them alphabetically
+            const cantons = [...new Set(data.map(item => item.canton))].sort();
 
-    // If you want to use the sample JSON data directly
-    addMarkers(jsonData);
+            // Populate the canton select dropdown
+            populateCantonSelect(cantons);
+
+            // Show the modal
+            $('#cantonModal').modal('show');
+
+            // Handle change event on the select element
+            document.getElementById('cantonSelect').addEventListener('change', function() {
+                const selectedCanton = this.value;
+
+                // Hide the select dropdown and show the check mark
+                document.getElementById('cantonSelect').classList.add('d-none');
+                document.getElementById('loadingFeedback').classList.remove('d-none');
+
+                // Filter data and add markers
+                const filteredData = filterDataByCanton(data, selectedCanton);
+                addMarkers(filteredData);
+
+                // Hide the modal after markers are added
+                setTimeout(() => {
+                    $('#cantonModal').modal('hide');
+                }, 100);
+            });
+        })
+        .catch(error => console.error('Error loading JSON:', error));
 </script>
 </body>
 </html>
